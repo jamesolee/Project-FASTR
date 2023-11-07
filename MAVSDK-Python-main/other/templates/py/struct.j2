@@ -1,0 +1,95 @@
+class {{ name.upper_camel_case }}:
+    """
+ {{ indent(struct_description, 1) }}
+
+     Parameters
+     ----------
+     {% for field in fields -%}
+     {{ field.name.lower_snake_case }} : {{ field.type_info.name }}
+         {{ field.description }}
+     {% endfor -%}
+   """
+
+    {% for nested_enum in nested_enums %}
+    {{ '\n' + indent(nested_enums[nested_enum], 1) }}
+    {% endfor %}
+
+    def __init__(
+            self,
+            {%- for field in fields %}
+            {{ field.name.lower_snake_case }}{{ "," if not loop.last }}
+            {%- endfor %}):
+        """ Initializes the {{ name.upper_camel_case }} object """
+        {%- for field in fields %}
+        self.{{ field.name.lower_snake_case }} = {{ field.name.lower_snake_case }}
+        {%- endfor %}
+
+    def __eq__(self, to_compare):
+        """ Checks if two {{ name.upper_camel_case }} are the same """
+        try:
+            # Try to compare - this likely fails when it is compared to a non
+            # {{ name.upper_camel_case }} object
+            return \
+                {%- for field in fields %}
+                (self.{{ field.name.lower_snake_case }} == to_compare.{{ field.name.lower_snake_case }}){{ " and \\" if not loop.last }}
+                {%- endfor %}
+
+        except AttributeError:
+            return False
+
+    def __str__(self):
+        """ {{ name.upper_camel_case }} in string representation """
+        struct_repr = ", ".join([
+                {%- for field in fields %}
+                "{{ field.name.lower_snake_case }}: " + str(self.{{ field.name.lower_snake_case }}){{ "," if not loop.last }}
+                {%- endfor %}
+                ])
+
+        return f"{{ name.upper_camel_case }}: [{struct_repr}]"
+
+    @staticmethod
+    def translate_from_rpc(rpc{{ name.upper_camel_case }}):
+        """ Translates a gRPC struct to the SDK equivalent """
+        return {{ name.upper_camel_case }}(
+                {%- for field in fields %}
+                {% if field.type_info.is_primitive %}
+                rpc{{ name.upper_camel_case }}.{{ field.name.lower_snake_case }}{{ "," if not loop.last }}
+                {% else %}
+                    {%- if field.type_info.is_repeated %}
+                list(map(lambda elem: {{ field.type_info.inner_name }}.translate_from_rpc(elem), rpc{{ name.upper_camel_case }}.{{ field.name.lower_snake_case }})){{ "," if not loop.last }}
+                    {%- else %}
+                {% if field.type_info.parent_type is not none %}{{ field.type_info.parent_type }}.{% endif %}{{ field.type_info.inner_name }}.translate_from_rpc(rpc{{ name.upper_camel_case }}.{{ field.name.lower_snake_case }}){{ "," if not loop.last }}
+                    {%- endif %}
+                {% endif %}
+                {%- endfor %})
+
+    def translate_to_rpc(self, rpc{{ name.upper_camel_case }}):
+        """ Translates this SDK object into its gRPC equivalent """
+
+        {% for field in fields %}
+        {% if field.type_info.is_repeated %}
+            {% if field.type_info.is_primitive %}
+        for elem in self.{{ field.name.lower_snake_case}}:
+          rpc{{ name.upper_camel_case }}.{{ field.name.lower_snake_case }}.append(elem)
+            {% else %}
+        rpc_elems_list = []
+        for elem in self.{{ field.name.lower_snake_case }}:
+                {% if field.type_info.is_enum %}
+            rpc_elems_list.append(elem.translate_to_rpc())
+                {% else %}
+            rpc_elem = {{ plugin_name.lower_snake_case }}_pb2.{{ field.type_info.inner_name }}()
+            elem.translate_to_rpc(rpc_elem)
+            rpc_elems_list.append(rpc_elem)
+                {% endif %}
+        rpc{{ name.upper_camel_case }}.{{ field.name.lower_snake_case }}.extend(rpc_elems_list)
+            {% endif %}
+        {% else %}
+            {% if field.type_info.is_primitive %}
+        rpc{{ name.upper_camel_case }}.{{ field.name.lower_snake_case }} = self.{{ field.name.lower_snake_case }}
+            {% elif field.type_info.is_enum %}
+        rpc{{ name.upper_camel_case }}.{{ field.name.lower_snake_case }} = self.{{ field.name.lower_snake_case }}.translate_to_rpc()
+            {% else %}
+        self.{{ field.name.lower_snake_case}}.translate_to_rpc(rpc{{ name.upper_camel_case }}.{{ field.name.lower_snake_case }})
+            {% endif %}
+        {% endif %}
+        {% endfor %}

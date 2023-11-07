@@ -1,0 +1,13 @@
+venv
+__pycache__
+*.pyc
+*.egg*
+dist/
+wheelhouse/
+build/
+*.proto
+.idea/
+*.ropeproject/
+.pytest_cache/
+.tox/
+mavsdk/bin/mavsdk_server
