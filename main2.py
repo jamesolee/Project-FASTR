@@ -90,39 +90,30 @@ drone = mavutil.mavlink_connection(args.device, baud=args.baudrate, source_syste
 # wait for the heartbeat msg to find the system ID
 wait_heartbeat(drone)
 
-# print("Sending all message types")
+print("Sending all message types")
 # mavtest.generate_outputs(master.mav)
 
-# COMMAND LONG SYNTAX
-# drone.mav.command_long_send(drone.target_system,drone.target_component,mavutil.mavlink.COMMAND,CONFIRMATION,PARAM1,PARAM2,PARAM3,PARAM4,PARAM5,PARAM6,PARAM7)
 
 # ARM THROTTLE
-drone.mav.command_long_send(drone.target_system,drone.target_component,mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,0,1,21196,0,0,0,0,0)
-msg = drone.recv_match(type='COMMAND_ACK', blocking=True)
-print(msg)
-
+drone.mav.command_int_send(drone.target_system,drone.target_component,mavutil.mavlink.MAV_FRAME_LOCAL_NED,mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,0,0,1,0,0,0,0,0,0)
 
 # TAKEOFF 0.5
-drone.mav.command_long_send(drone.target_system,drone.target_component,mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,0,0,0,0,0,0,0,0.5)
+drone.mav.command_int_send(drone.target_system,drone.target_component,mavutil.mavlink.MAV_FRAME_LOCAL_NED,mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,0,0,0,0,0,0,0,0,0.5)
 msg = drone.recv_match(type='COMMAND_ACK', blocking=True)
 print(msg)
 
-time.sleep(5)
+time.sleep(10)
 
 # LAND
-drone.mav.command_long_send(drone.target_system,drone.target_component,mavutil.mavlink.MAV_CMD_NAV_LAND,0,0,0,0,0,0,0,0)
+drone.mav.command_int_send(drone.target_system,drone.target_component,mavutil.mavlink.MAV_FRAME_LOCAL_NED,mavutil.mavlink.MAV_CMD_NAV_LAND,0,0,0,0,0,0,0,0,0)
 msg = drone.recv_match(type='COMMAND_ACK', blocking=True)
 print(msg)
 
-time.sleep(5)
+
+time.sleep(10)
 
 
 # DISARM
-drone.mav.command_long_send(drone.target_system,drone.target_component,mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,0,0,21196,0,0,0,0,0)
-msg = drone.recv_match(type='COMMAND_ACK', blocking=True)
-print(msg)
-
-# reset to STABILIZE mode for next time
-drone.mav.command_long_send(drone.target_system,drone.target_component,mavutil.mavlink.MAV_CMD_DO_SET_MODE,0,mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,0,0,0,0,0,0)
+drone.mav.command_int_send(drone.target_system,drone.target_component,mavutil.mavlink.MAV_FRAME_LOCAL_NED,mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,0,0,0,0,0,0,0,0,0)
 msg = drone.recv_match(type='COMMAND_ACK', blocking=True)
 print(msg)
