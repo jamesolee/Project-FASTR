@@ -83,13 +83,20 @@ def wait_heartbeat(m):
     print("Heartbeat from APM (system %u component %u)" % (m.target_system, m.target_component))
 
 # create a mavlink serial instance
-master = mavutil.mavlink_connection(args.device, baud=args.baudrate, source_system=args.SOURCE_SYSTEM)
+drone = mavutil.mavlink_connection(args.device, baud=args.baudrate, source_system=args.SOURCE_SYSTEM)
 
 # wait for the heartbeat msg to find the system ID
-wait_heartbeat(master)
+wait_heartbeat(drone)
 
 print("Sending all message types")
 # mavtest.generate_outputs(master.mav)
 
-mavlink1.command_int_send(master.target_system,master.target_component,mavlink1.MAV_FRAME_LOCAL_NED,mavlink1.MAV_CMD_NAV_TAKEOFF,None,0,)
 
+# ARM THROTTLE
+drone.mav.command_int_send(drone.target_system,drone.target_component,mavlink1.MAV_FRAME_LOCAL_NED,mavlink1.MAV_CMD_COMPONENT_ARM_DISARM,0,0,1,0,0,0,0,0,0)
+
+# TAKEOFF 0.5
+drone.mav.command_int_send(drone.target_system,drone.target_component,mavlink1.MAV_FRAME_LOCAL_NED,mavlink1.MAV_CMD_NAV_TAKEOFF,0,0,0,0,0,0,0,0,0.5)
+
+msg = drone.recv_match(type='COMMAND_ACK', blocking=True)
+print(msg)
