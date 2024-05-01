@@ -1,7 +1,7 @@
 import time
 import serial
 
-port = serial.Serial(port='/dev/ttyAMC0', baudrate=115200)
+port = serial.Serial(port='/dev/ttyACM0', baudrate=115200)
 
 # port.write(bytes(b'usbsd\n'))
 # port.write(bytes(b'setmapping2 YUYV 640 480 30.0 JeVois SerialTest\n'))
