@@ -41,7 +41,6 @@ if __name__ == '__main__':
 
     while time.time() - start_time < 10:
         current_time = time.time()
-        print(current_time)
         dt = current_time - last_time
 
         power = pid(water_temp)
