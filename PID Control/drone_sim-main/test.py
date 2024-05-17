@@ -20,7 +20,6 @@ def calculate_rotor_vels(f, tphi, ttheta, tpsi):
             [B, -B, B, -B]
         ]
     )
-    
     x = np.linalg.solve(a, b)
 
     return x
@@ -28,7 +27,7 @@ def calculate_rotor_vels(f, tphi, ttheta, tpsi):
 drone = Drone(True)
 drone.z = 2.5
 
-drone.phi = 1
+drone.phi = 0
 print(drone.phi)
 
 # Make a body
@@ -40,18 +39,18 @@ body.attach_to(drone)
 ui = Graphics()
 ui.add_actor(drone)
 
-T = (AX * 5)/np.sin(drone.phi)
-print(T)
+# T = (AX * 5)/np.sin(drone.phi)
+# print(T)
 
 for i in range(1050):
-    x = calculate_rotor_vels(T, 0, 0, 0)
-    # w1, w2, w3, w4 = x[0][0], x[1][0], x[2][0], x[3][0]
-
-    if i < 25:
-
-        w1, w2, w3, w4 = NULL_ROT, NULL_ROT, NULL_ROT, 1.1*NULL_ROT
-    else:
-        w1, w2, w3, w4 = NULL_ROT, NULL_ROT, NULL_ROT, NULL_ROT
+    x = calculate_rotor_vels(620, 0, 0, 0)
+    
+    w1, w2, w3, w4 = x[0][0], x[1][0], x[2][0], x[3][0]
+    # if i < 25:
+        
+    #     w1, w2, w3, w4 = NULL_ROT, NULL_ROT, NULL_ROT, NULL_ROT
+    # else:
+    #     w1, w2, w3, w4 = 0.8*NULL_ROT, 0.8*NULL_ROT, 0.8*NULL_ROT, 0.8*NULL_ROT
     # print(drone.vx)
 
     time_ = time()
