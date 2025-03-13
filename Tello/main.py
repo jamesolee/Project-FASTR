@@ -7,7 +7,7 @@ import time
 # Set this to true if testing on webcam
 WEBCAM = True
 # Set this to True to enable takeoff and gate traversal
-FLIGHT = False
+FLIGHT = True
 
 # Seconds for test flight before auto-land
 TIMEOUT_STOP = 20
@@ -40,7 +40,6 @@ else:
 
 if FLIGHT:
     tello.takeoff()
-    tello.move_up(20)
     t_takeoff = time.time()
 
 height = 0
@@ -57,7 +56,7 @@ while True:
         raise ValueError("frame not loaded.")
     if not WEBCAM:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # Look for aruco markers
     corners, ids, rejected = detector.detectMarkers(gray)
@@ -87,7 +86,7 @@ while True:
         video_centre = np.array([gray.shape[1],gray.shape[0]])//2
         img = cv2.line(img, video_centre, gate_centre, color=(0,0,255), thickness=5)
         img = cv2.circle(img, gate_centre,10, color=(0,255,0),thickness = -1)
-        
+
         img = cv2.circle(img, pt1, 10, color=(255,0,0),thickness = -1)
         img = cv2.circle(img, pt2, 10, color=(0,0,255),thickness = -1)
 
@@ -103,28 +102,41 @@ while True:
             print('Flight time over - landing...')
             break
 
-    if S1_NO_GATE:
+    if state == S1_NO_GATE:
         # Spin until gate found
 
         v_lr = 0 # left_right_velocity
         v_fb = 0 # forward_backward_velocity
         v_ud = 0 # up_down_velocity
         w_yaw = 20 # yaw_velocity
+<<<<<<< Updated upstream
         if not WEBCAM:
             tello.send_rc_control( int(v_lr), int(v_fb), int(v_ud), int(w_yaw))
+=======
+        print(state)
+        tello.send_rc_control( int(v_lr), int(v_fb), int(v_ud), int(w_yaw))
+>>>>>>> Stashed changes
     
     # P-control navigation to centre the gate
-    Kp = 0.08 # Proportional gain
+    Kp = 0.02 # Proportional gain
 
     if state == S2_CENTRE_GATE:
         if len(corners) >= 2:
             # Update velocity RC channels -100 to 100
             v_lr = np.sign(translate[0]) * min(Kp*abs(translate[0]),V_PERCENT_MAX) # left_right_velocity
+<<<<<<< Updated upstream
             v_fb = 10 # forward_backward_velocity
             v_ud = 0 # up_down_velocity
             w_yaw = 0 # yaw_velocity
         print(f'v_lr = {v_lr}')
         if not WEBCAM:
+=======
+            v_fb = 0 # forward_backward_velocity
+            v_ud = np.sign(translate[1]) * min(Kp*abs(translate[1]),V_PERCENT_MAX) # up_down_velocity
+            x_yaw = 0 # yaw_velocity
+            print(state)
+            print(f'v_lr = {v_lr}')
+>>>>>>> Stashed changes
             tello.send_rc_control( int(v_lr), int(v_fb), int(v_ud), int(w_yaw))
 
 
