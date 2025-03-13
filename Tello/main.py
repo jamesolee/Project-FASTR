@@ -5,7 +5,7 @@ from video_to_gate_centre import gate_position_cf
 import time
 
 # Set this to true if testing on webcam
-WEBCAM = True
+WEBCAM = False
 # Set this to True to enable takeoff and gate traversal
 FLIGHT = True
 
@@ -13,7 +13,7 @@ FLIGHT = True
 TIMEOUT_STOP = 20
 
 # Ensure linear velocity is below this for safety
-V_PERCENT_MAX = 10
+V_PERCENT_MAX = 20
 
 # State machine states
 S0_IDLE = 0
@@ -40,6 +40,8 @@ else:
 
 if FLIGHT:
     tello.takeoff()
+    tello.send_rc_control( int(0), int(0), int(0), int(0))
+    tello.move_up(50)
     t_takeoff = time.time()
 
 height = 0
@@ -108,35 +110,22 @@ while True:
         v_lr = 0 # left_right_velocity
         v_fb = 0 # forward_backward_velocity
         v_ud = 0 # up_down_velocity
-        w_yaw = 20 # yaw_velocity
-<<<<<<< Updated upstream
-        if not WEBCAM:
-            tello.send_rc_control( int(v_lr), int(v_fb), int(v_ud), int(w_yaw))
-=======
+        w_yaw = 30 # yaw_velocity
         print(state)
         tello.send_rc_control( int(v_lr), int(v_fb), int(v_ud), int(w_yaw))
->>>>>>> Stashed changes
     
     # P-control navigation to centre the gate
-    Kp = 0.02 # Proportional gain
+    Kp = 0.08 # Proportional gain
 
     if state == S2_CENTRE_GATE:
         if len(corners) >= 2:
             # Update velocity RC channels -100 to 100
             v_lr = np.sign(translate[0]) * min(Kp*abs(translate[0]),V_PERCENT_MAX) # left_right_velocity
-<<<<<<< Updated upstream
-            v_fb = 10 # forward_backward_velocity
-            v_ud = 0 # up_down_velocity
+            v_fb = 15 # forward_backward_velocity
+            v_ud = -np.sign(translate[1]) * min(Kp*abs(translate[1]),V_PERCENT_MAX) # up_down_velocity
             w_yaw = 0 # yaw_velocity
-        print(f'v_lr = {v_lr}')
-        if not WEBCAM:
-=======
-            v_fb = 0 # forward_backward_velocity
-            v_ud = np.sign(translate[1]) * min(Kp*abs(translate[1]),V_PERCENT_MAX) # up_down_velocity
-            x_yaw = 0 # yaw_velocity
             print(state)
             print(f'v_lr = {v_lr}')
->>>>>>> Stashed changes
             tello.send_rc_control( int(v_lr), int(v_fb), int(v_ud), int(w_yaw))
 
 

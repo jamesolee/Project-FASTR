@@ -21,7 +21,7 @@ def gate_position_cf(corners):
 
 
     # round to nearest pixel
-    gate_centre = np.array([int(gate_centre[0]), int(gate_centre[1])])
+    gate_centre = np.array([int(gate_centre[0]), int(gate_centre[1]) + 100])
 
     print(gate_centre)
 
