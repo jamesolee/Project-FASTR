@@ -5,7 +5,7 @@ from video_to_gate_centre import gate_position_cf
 import time
 
 # Set this to true if testing on webcam
-WEBCAM = False
+WEBCAM = True
 # Set this to True to enable takeoff and gate traversal
 FLIGHT = False
 
@@ -31,7 +31,7 @@ mat = np.array([[921.170702, 0.000000, 459.904354], [0.000000, 919.018377, 351.2
 dist = np.array([-0.033458, 0.105152, 0.001256, -0.006647, 0.000000])
 
 if WEBCAM:
-    cam = cv2.VideoCapture(1)
+    cam = cv2.VideoCapture(2)
 else:
     tello = Tello()
     tello.connect()
@@ -110,7 +110,8 @@ while True:
         v_fb = 0 # forward_backward_velocity
         v_ud = 0 # up_down_velocity
         w_yaw = 20 # yaw_velocity
-        tello.send_rc_control( int(v_lr), int(v_fb), int(v_ud), int(w_yaw))
+        if not WEBCAM:
+            tello.send_rc_control( int(v_lr), int(v_fb), int(v_ud), int(w_yaw))
     
     # P-control navigation to centre the gate
     Kp = 0.08 # Proportional gain
@@ -123,7 +124,8 @@ while True:
             v_ud = 0 # up_down_velocity
             w_yaw = 0 # yaw_velocity
         print(f'v_lr = {v_lr}')
-        tello.send_rc_control( int(v_lr), int(v_fb), int(v_ud), int(w_yaw))
+        if not WEBCAM:
+            tello.send_rc_control( int(v_lr), int(v_fb), int(v_ud), int(w_yaw))
 
 
 
