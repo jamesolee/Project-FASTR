@@ -7,7 +7,7 @@ import time
 # Set this to true if testing on webcam
 WEBCAM = False
 # Set this to True to enable takeoff and gate traversal
-FLIGHT = True
+FLIGHT = False
 
 # Seconds for test flight before auto-land
 TIMEOUT_STOP = 20
