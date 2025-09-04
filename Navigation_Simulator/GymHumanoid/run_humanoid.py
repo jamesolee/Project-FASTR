@@ -4,7 +4,7 @@ import gymnasium as gym
 
 def main(model_path):
     # Create environment with GUI
-    env = gym.make("Humanoid-v4", render_mode="depth_array")
+    env = gym.make("Humanoid-v4", render_mode="human")
 
     # Load model
     model = PPO.load(model_path)

@@ -1,5 +1,9 @@
 """
-Taken from Gymnasium package at: gymnasium/envs/mujoco/
+Modified version of gymnasium/envs/mujoco/mujoco_env.py
+
+do_simulation() was altered to instead check that the decided action is of the same dimension as the mujoco actuators, not the action space.
+This is important for training the drone, as the RL action is the linear velocity (vx,vy,vz) rather than the 4 motor inputs. A custom suite of controllers
+converts the desired velocity to motor inputs, and has been validated separately.
 """
 
 from os import path
@@ -148,10 +152,18 @@ class BaseMujocoEnv(gym.Env):
         Step the simulation n number of frames and applying a control action.
         """
         # Check control input is contained in the action space
-        if np.array(ctrl).shape != self.action_space.shape:
+        # if np.array(ctrl).shape != self.action_space.shape:
+        #     raise ValueError(
+        #         f"Action dimension mismatch. Expected {self.action_space.shape}, found {np.array(ctrl).shape}"
+        #     )
+        
+        # Manually modified version:
+        # Check control input is contained in the action space
+        if np.array(ctrl).shape[0] != self.model.actuator_ctrlrange.shape[0]:
             raise ValueError(
-                f"Action dimension mismatch. Expected {self.action_space.shape}, found {np.array(ctrl).shape}"
+                f"Action dimension mismatch. Expected {self.model.actuator_ctrlrange.shape[0]}, found {np.array(ctrl).shape[0]}"
             )
+
         self._step_mujoco_simulation(ctrl, n_frames)
 
     def close(self):
