@@ -15,6 +15,8 @@ import time
 import itertools
 import numpy as np
 
+import math
+
 # Graphics and plotting.
 import mediapy as media
 import matplotlib.pyplot as plt
@@ -198,8 +200,6 @@ class Drone:
       # Also add waypoints in front and behind of gate
       quat = self.data.xquat[mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "gate"+str(i+1))]
       euler_gate = Rotation.from_quat(quat).as_euler('zyx',degrees=False)
-      # print(euler_gate)
-
       yaw = euler_gate[2]
       pos1 = pos - self.gate_d * np.array([np.sin(yaw), np.cos(yaw), 0])
       pos2 = pos + self.gate_d * np.array([np.sin(yaw), np.cos(yaw), 0])
@@ -218,21 +218,46 @@ class Drone:
     points_x = [0]
     points_y = [0]
     points_z = [0]
-    pitch = [0]
-    roll = [0]
-    yaw = [0]
+    pitch = [0.0]
+    roll = [0.0]
+    yaw = [math.pi]
     for i in range(len(self.gate_centres)):
       points_x.append(self.gate_centres[i][0])
       points_y.append(self.gate_centres[i][1])
       points_z.append(self.gate_centres[i][2])
       roll.append(self.gate_att[i][0])
       pitch.append(self.gate_att[i][1])
-      yaw.append(self.gate_att[i][2])
-    
+      yaw.append(self.gate_att[i][2] - (math.pi/2))
+
+
+    i = 0
+    dx = []
+    dy = []
+    dz = []
+    while i < len(roll):
+      dx.append(1 * math.cos(yaw[i]))
+      dy.append(1 * math.sin(yaw[i]))
+      dz.append(0)
+      i += 1
+
+
     # Compute path
-    # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = hermite_path(points_x,points_y,points_z, roll, pitch, yaw)
-    self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = spline_path(points_x,points_y,points_z)
+    self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = hermite_path(points_x,points_y,points_z, dx, dy, dz)
+    # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = spline_path(points_x,points_y,points_z)
     self.spline_idx = 0
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    for i in range(self.n_gates):
+      ax.scatter(self.gate_centres[i][0], self.gate_centres[i][1], self.gate_centres[i][2],c='red',s=20)
+    ax.plot(self.spline_x, self.spline_y, self.spline_z, 'r.', markersize=0.5, label='Closed spline')
+    ax.legend()
+    ax.set_xlabel('X (m)')
+    ax.set_ylabel('Y (m)')
+    ax.set_zlabel('Z (m)')
+    set_axes_equal(ax)
+    plt.savefig('graph_trajectory.png')
+    plt.show()
     
 
   def get_position(self):
