@@ -31,6 +31,7 @@ from scipy.spatial.transform import Rotation
 import cv2
 
 from path_planning import hermite_path
+from path_planning import spline_path
 
 MAX_MOTOR_THRUST = 6.0
 MIN_MOTOR_THRUST = 0.0
@@ -229,7 +230,8 @@ class Drone:
       yaw.append(self.gate_att[i][2])
     
     # Compute path
-    self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = hermite_path(points_x,points_y,points_z, roll, pitch, yaw)
+    # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = hermite_path(points_x,points_y,points_z, roll, pitch, yaw)
+    self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = spline_path(points_x,points_y,points_z)
     self.spline_idx = 0
     
 
