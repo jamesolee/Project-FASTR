@@ -14,6 +14,13 @@ z = [0.1, 0.1, 0.1, 0.1, 0]
 
 
 def hermite_path(x, y, z, dx, dy, dz):
+    i = 0
+    while i < len(dx):
+        dx[i] = 5 * dx[i]
+        dy[i] = 5 * dy[i]
+        dz[i] = 5 * dz[i]
+        i += 1
+
     p_x = []
     p_y = []
     p_z = []
@@ -26,7 +33,7 @@ def hermite_path(x, y, z, dx, dy, dz):
     
     while i < len(x) - 1:
         t.append(i)
-        i += 0.1
+        i += 0.01
 
     h1 = []
     h2 = []
@@ -51,7 +58,7 @@ def hermite_path(x, y, z, dx, dy, dz):
     
     dt = 0
     while dt < len(t) - 1:
-        i = int(dt/10)
+        i = int(dt/100)
         p_x.append(float(h1[dt]) * float(x[i]) + float(h2[dt]) * float(x[i + 1]) + float(h3[dt]) * dx[i] + float(h4[dt]) * float(dx[i + 1]))
         p_y.append(float(h1[dt]) * float(y[i]) + float(h2[dt]) * float(y[i + 1]) + float(h3[dt]) * dy[i] + float(h4[dt]) * float(dy[i + 1]))
         p_z.append(float(h1[dt]) * float(z[i]) + float(h2[dt]) * float(z[i + 1]) + float(h3[dt]) * dz[i] + float(h4[dt]) * float(dz[i + 1]))
