@@ -5,6 +5,8 @@ import os
 try:
   print('Checking that Mujoco works:')
   import mujoco
+  # import mujoco_py
+  import mujoco.viewer
   mujoco.MjModel.from_xml_string('<mujoco/>')
 except Exception as e:
   raise e from RuntimeError(
@@ -402,6 +404,20 @@ class Drone:
     renderer = mujoco.Renderer(self.model, 480, 640)
     if enable_camera:
       renderer_drone = mujoco.Renderer(self.model, 480, 640)
+    
+    display_rate = 10
+    display_counter = 0
+
+
+    # sim = mujoco_py.MjSim(self.model)
+    # viewer = mujoco_py.MjViewer(sim)
+
+    # viewer = mujoco.viewer.launch_passive(self.model, self.data)
+
+    from gymnasium.envs.mujoco.mujoco_rendering import MujocoRenderer
+    self.mujoco_renderer = MujocoRenderer(
+            self.model, self.data, None
+        )
 
     for i in range(n_steps):
 
@@ -454,6 +470,7 @@ class Drone:
       renderer.update_scene(self.data,cam)
       if enable_camera:
         renderer_drone.update_scene(self.data,camera="dronecam")
+      # viewer.sync()
 
       # Store data
       self.energy.append(self.data.energy[0] + self.data.energy[1])
@@ -477,6 +494,16 @@ class Drone:
       if enable_camera:
         pixels_drone = renderer_drone.render()
         frames_drone.append(pixels_drone)
+
+      # OpenCV method for displaying live
+      # display_counter += 1
+      # if display_counter % (sim_framerate//display_rate) == 0:
+      #   bgr = cv2.cvtColor(pixels, cv2.COLOR_RGB2BGR)
+      #   cv2.imshow("Simulation", bgr)
+      #   if cv2.waitKey(1) & 0xFF == ord("q"):
+      #     break
+
+    cv2.destroyAllWindows()
 
     # Render video at half real-time.
     # media.show_video(frames, fps=framerate/2)
