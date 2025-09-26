@@ -30,7 +30,7 @@ from scipy.spatial.transform import Rotation
 
 import cv2
 
-from path_planning import spline_path
+from path_planning import hermite_path
 
 MAX_MOTOR_THRUST = 6.0
 MIN_MOTOR_THRUST = 0.0
@@ -186,6 +186,7 @@ class Drone:
     self.n_gates = n_gates
     self.gate_centres = []
     self.control_points = [[self.data.qpos[0],self.data.qpos[1],self.data.qpos[2]]]
+    self.gate_att = []
     self.gate_d = 0.5
 
     for i in range(self.n_gates):
@@ -205,20 +206,30 @@ class Drone:
       self.gate_centres.append(pos)
       self.control_points.append(pos)
       self.control_points.append(pos2)
+      self.gate_att.append(euler_gate)
+
+
 
       # For spline calculation
     self.control_points.append([0,0,0])
+  
 
-    points_x = []
-    points_y = []
-    points_z = []
-    for i in range(len(self.control_points)):
-      points_x.append(self.control_points[i][0])
-      points_y.append(self.control_points[i][1])
-      points_z.append(self.control_points[i][2])
+    points_x = [0]
+    points_y = [0]
+    points_z = [0]
+    pitch = [0]
+    roll = [0]
+    yaw = [0]
+    for i in range(len(self.gate_centres)):
+      points_x.append(self.gate_centres[i][0])
+      points_y.append(self.gate_centres[i][1])
+      points_z.append(self.gate_centres[i][2])
+      roll.append(self.gate_att[i][0])
+      pitch.append(self.gate_att[i][1])
+      yaw.append(self.gate_att[i][2])
     
     # Compute path
-    self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = spline_path(points_x,points_y,points_z)
+    self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = hermite_path(points_x,points_y,points_z, roll, pitch, yaw)
     self.spline_idx = 0
     
 
