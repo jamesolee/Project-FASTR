@@ -488,7 +488,7 @@ class Drone:
     media.write_video("sim.mp4", frames, fps=framerate)
     # display_video('Simulation',frames,fps=framerate)
     
-    # self._plot_all()
+    self._plot_all()
   
   def _plot_all(self):
     fig, ax1 = plt.subplots()
@@ -506,6 +506,7 @@ class Drone:
     ax2.plot(self.t_vec, self.z_hist, label='Z', color='red', linestyle='dashed')
     ax2.set_ylabel('Z')
     ax2.legend(loc='upper right')
+    plt.savefig('graph_position.png')
     plt.show()
 
     plt.figure()
@@ -513,6 +514,7 @@ class Drone:
     plt.plot(self.t_vec, self.vy_hist, label='V_y')
     plt.plot(self.t_vec, self.vz_hist, label='V_z')
     plt.legend()
+    plt.savefig('graph_velocities.png')
     plt.show()
 
     # plt.figure()
@@ -564,6 +566,7 @@ class Drone:
     ax2.set_ylabel('Target roll and pitch')
     ax2.legend(loc='upper right')
     ax2.set_ylim(-180,180)
+    plt.savefig('graph_v_errors.png')
     plt.show()
 
     fig = plt.figure()
@@ -577,6 +580,7 @@ class Drone:
     ax.set_ylabel('Y (m)')
     ax.set_zlabel('Z (m)')
     set_axes_equal(ax)
+    plt.savefig('graph_trajectory.png')
     plt.show()
 
 def run_test():
