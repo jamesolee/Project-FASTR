@@ -138,7 +138,7 @@ class Drone:
     self.pid_yaw_rate = PID(5, 0.5, 0.01, setpoint=0, output_limits= (-1,1))
 
     # Attitude controller PIDs
-    self.pid_alt = PID(1, 0, 0, setpoint=0, output_limits= (-1,1))
+    self.pid_alt = PID(1, 0, 0, setpoint=0, output_limits= (-10,10))
     self.Kp = 2
     self.Kp_yaw = 1
     # Unused - using SQRT controller instead
@@ -219,7 +219,7 @@ class Drone:
 
     points_x = [0]
     points_y = [0]
-    points_z = [0]
+    points_z = [1]
     pitch = [0.0]
     roll = [0.0]
     yaw = [math.pi]
@@ -372,7 +372,6 @@ class Drone:
     x_error = self.x - x
     y_error = self.y - y
     z_error = self.z - z
-
     self.target_x_hist.append(x)
     self.target_y_hist.append(y)
     self.target_z_hist.append(z)
@@ -400,8 +399,9 @@ class Drone:
     next_waypoint = [self.spline_x[idx], self.spline_y[idx], self.spline_z[idx]]
     pos_error = np.sqrt( (self.x-next_waypoint[0])**2 + (self.y-next_waypoint[1])**2 + (self.z-next_waypoint[2])**2)
     K_ff = 5 * np.min([wp_error/pos_error, 1])
-    self.ctrl_pos_hold(next_waypoint[0], next_waypoint[1], next_waypoint[2], ff_vx=K_ff * self.spline_vx[idx], ff_vy=K_ff * self.spline_vy[idx], ff_vz=K_ff * self.spline_vz[idx])
-    
+    self.ctrl_pos_hold(next_waypoint[0], next_waypoint[1], next_waypoint[2], ff_vx=0.09 *K_ff * self.spline_vx[idx], ff_vy=0.09 * K_ff * self.spline_vy[idx], ff_vz=0.09 *K_ff * self.spline_vz[idx])
+    # self.ctrl_pos_hold(next_waypoint[0], next_waypoint[1], next_waypoint[2], ff_vx=0, ff_vy=0, ff_vz=0)
+
     
     return
 
@@ -641,7 +641,7 @@ def run_test():
   dir_path = os.getcwd()
   xml_path = dir_path + '/mujoco_menagerie-main/skydio_x2_racecourse/scene.xml'
   drone = Drone(xml_path, n_gates=6)
-  drone.run_sim(10, 300, ctrl_type=CtrlType.FOLLOW_SPLINE, enable_camera=False)
+  drone.run_sim(20, 300, ctrl_type=CtrlType.FOLLOW_SPLINE, enable_camera=False)
 
 if __name__ == '__main__':
   run_test()
