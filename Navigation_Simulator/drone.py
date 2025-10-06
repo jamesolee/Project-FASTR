@@ -35,6 +35,9 @@ from scipy.spatial.transform import Rotation
 import cv2
 
 from path_planning import hermite_path
+from path_planning import catmull_rom_path
+from path_planning import natural_cubic_path
+from path_planning import TCB_path
 from path_planning import spline_path
 
 MAX_MOTOR_THRUST = 6.0
@@ -244,7 +247,7 @@ class Drone:
 
 
     # Compute path
-    self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = hermite_path(points_x,points_y,points_z, dx, dy, dz)
+    self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = TCB_path(points_x,points_y,points_z)
     # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = spline_path(points_x,points_y,points_z)
     self.spline_idx = 0
 
@@ -398,11 +401,10 @@ class Drone:
     idx = self.spline_idx%len(self.spline_x)
     next_waypoint = [self.spline_x[idx], self.spline_y[idx], self.spline_z[idx]]
     pos_error = np.sqrt( (self.x-next_waypoint[0])**2 + (self.y-next_waypoint[1])**2 + (self.z-next_waypoint[2])**2)
-    K_ff = 5 * np.min([wp_error/pos_error, 1])
-    self.ctrl_pos_hold(next_waypoint[0], next_waypoint[1], next_waypoint[2], ff_vx=0.09 *K_ff * self.spline_vx[idx], ff_vy=0.09 * K_ff * self.spline_vy[idx], ff_vz=0.09 *K_ff * self.spline_vz[idx])
+    K_ff = 5 * np.min([(wp_error/pos_error)**2, 1])
+    self.ctrl_pos_hold(next_waypoint[0], next_waypoint[1], next_waypoint[2], ff_vx=0.05 *K_ff * self.spline_vx[idx], ff_vy=0.05 * K_ff * self.spline_vy[idx], ff_vz=0.05 *K_ff * self.spline_vz[idx])
     # self.ctrl_pos_hold(next_waypoint[0], next_waypoint[1], next_waypoint[2], ff_vx=0, ff_vy=0, ff_vz=0)
 
-    
     return
 
 
