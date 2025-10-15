@@ -1,0 +1,35 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2023-Quadcopter", "2023-Quadcopter", "{BC38125F-0CE9-9A4F-949A-91D838BF3E7B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pymavlink-master", "pymavlink-master", "{250EB138-898A-C07E-D480-419C0AD4EA8D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "generator", "generator", "{B475FD92-A245-D867-BC80-F97DE5D6F4BE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MAVLink", "2023-Quadcopter\pymavlink-master\generator\CS\MAVLink.csproj", "{A97FF9AA-8469-A112-13E2-B3F58EF94B69}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A97FF9AA-8469-A112-13E2-B3F58EF94B69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A97FF9AA-8469-A112-13E2-B3F58EF94B69}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A97FF9AA-8469-A112-13E2-B3F58EF94B69}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A97FF9AA-8469-A112-13E2-B3F58EF94B69}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{250EB138-898A-C07E-D480-419C0AD4EA8D} = {BC38125F-0CE9-9A4F-949A-91D838BF3E7B}
+		{B475FD92-A245-D867-BC80-F97DE5D6F4BE} = {250EB138-898A-C07E-D480-419C0AD4EA8D}
+		{A97FF9AA-8469-A112-13E2-B3F58EF94B69} = {B475FD92-A245-D867-BC80-F97DE5D6F4BE}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5AE5C6E9-A863-4CB0-BD2A-C078FE6F8371}
+	EndGlobalSection
+EndGlobal
