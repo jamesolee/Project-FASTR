@@ -194,7 +194,7 @@ class Drone:
     self.n_gates = n_gates
     self.gate_centres = []
     self.control_points = [[self.data.qpos[0],self.data.qpos[1],self.data.qpos[2]]]
-    self.gate_att = []
+    self.gate_att = [[0.0,0.0,math.pi]]
     self.gate_d = 0.5
 
     for i in range(self.n_gates):
@@ -208,9 +208,14 @@ class Drone:
       yaw = euler_gate[2]
       pos1 = pos - self.gate_d * np.array([np.sin(yaw), np.cos(yaw), 0])
       pos2 = pos + self.gate_d * np.array([np.sin(yaw), np.cos(yaw), 0])
+
       self.control_points.append(pos1)
+      self.gate_att.append(euler_gate)
+
       self.gate_centres.append(pos)
       self.control_points.append(pos)
+      self.gate_att.append(euler_gate)
+
       self.control_points.append(pos2)
       self.gate_att.append(euler_gate)
 
@@ -218,37 +223,57 @@ class Drone:
 
       # For spline calculation
     self.control_points.append([0,0,0])
+    self.gate_att.append([0.0,0.0,math.pi])
+
+    points_x = []
+    points_y = []
+    points_z = []
+    gate_pitch = []
+    gate_roll = []
+    gate_yaw = []
+    for i in range(len(self.control_points)):
+      points_x.append(self.control_points[i][0])
+      points_y.append(self.control_points[i][1])
+      points_z.append(self.control_points[i][2])
+      gate_roll.append(self.gate_att[i][0])
+      gate_pitch.append(self.gate_att[i][1])
+      gate_yaw.append(self.gate_att[i][2] - (math.pi/2))
+
   
 
-    points_x = [0]
-    points_y = [0]
-    points_z = [1]
-    pitch = [0.0]
-    roll = [0.0]
-    yaw = [math.pi]
-    for i in range(len(self.gate_centres)):
-      points_x.append(self.gate_centres[i][0])
-      points_y.append(self.gate_centres[i][1])
-      points_z.append(self.gate_centres[i][2])
-      roll.append(self.gate_att[i][0])
-      pitch.append(self.gate_att[i][1])
-      yaw.append(self.gate_att[i][2] - (math.pi/2))
+    # points_x = [0]
+    # points_y = [0]
+    # points_z = [1]
+    # pitch = [0.0]
+    # roll = [0.0]
+    # yaw = [math.pi]
+    # for i in range(len(self.gate_centres)):
+    #   points_x.append(self.gate_centres[i][0])
+    #   points_y.append(self.gate_centres[i][1])
+    #   points_z.append(self.gate_centres[i][2])
+    #   roll.append(self.gate_att[i][0])
+    #   pitch.append(self.gate_att[i][1])
+    #   yaw.append(self.gate_att[i][2] - (math.pi/2))
 
 
     i = 0
     dx = []
     dy = []
     dz = []
-    while i < len(roll):
-      dx.append(1 * math.cos(yaw[i]))
-      dy.append(1 * math.sin(yaw[i]))
+    while i < len(gate_yaw):
+      dx.append(1 * math.cos(gate_yaw[i]))
+      dy.append(1 * math.sin(gate_yaw[i]))
       dz.append(0)
       i += 1
 
-
+    print(len(points_x))
     # Compute path
-    self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = TCB_path(points_x,points_y,points_z)
-    # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = spline_path(points_x,points_y,points_z)
+    self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = spline_path(points_x,points_y,points_z)
+    # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = catmull_rom_path(points_x,points_y,points_z)
+    # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = natural_cubic_path(points_x,points_y,points_z)
+    # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = TCB_path(points_x,points_y,points_z)
+    # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = hermite_path(points_x,points_y,points_z, dx, dy, dz)
+
     self.spline_idx = 0
 
     fig = plt.figure()
@@ -401,8 +426,8 @@ class Drone:
     idx = self.spline_idx%len(self.spline_x)
     next_waypoint = [self.spline_x[idx], self.spline_y[idx], self.spline_z[idx]]
     pos_error = np.sqrt( (self.x-next_waypoint[0])**2 + (self.y-next_waypoint[1])**2 + (self.z-next_waypoint[2])**2)
-    K_ff = 5 * np.min([(wp_error/pos_error)**2, 1])
-    self.ctrl_pos_hold(next_waypoint[0], next_waypoint[1], next_waypoint[2], ff_vx=0.05 *K_ff * self.spline_vx[idx], ff_vy=0.05 * K_ff * self.spline_vy[idx], ff_vz=0.05 *K_ff * self.spline_vz[idx])
+    K_ff = 5 * np.min([wp_error/pos_error, 1])
+    self.ctrl_pos_hold(next_waypoint[0], next_waypoint[1], next_waypoint[2], ff_vx=K_ff * self.spline_vx[idx], ff_vy=K_ff * self.spline_vy[idx], ff_vz=K_ff * self.spline_vz[idx])
     # self.ctrl_pos_hold(next_waypoint[0], next_waypoint[1], next_waypoint[2], ff_vx=0, ff_vy=0, ff_vz=0)
 
     return
@@ -432,19 +457,19 @@ class Drone:
     if enable_camera:
       renderer_drone = mujoco.Renderer(self.model, 480, 640)
     
-    display_rate = 10
-    display_counter = 0
-
+    # For live visualisation (NOT WORKING YET)
+    # display_rate = 10
+    # display_counter = 0
 
     # sim = mujoco_py.MjSim(self.model)
     # viewer = mujoco_py.MjViewer(sim)
 
     # viewer = mujoco.viewer.launch_passive(self.model, self.data)
 
-    from gymnasium.envs.mujoco.mujoco_rendering import MujocoRenderer
-    self.mujoco_renderer = MujocoRenderer(
-            self.model, self.data, None
-        )
+    # from gymnasium.envs.mujoco.mujoco_rendering import MujocoRenderer
+    # self.mujoco_renderer = MujocoRenderer(
+    #         self.model, self.data, None
+    #     )
 
     for i in range(n_steps):
 

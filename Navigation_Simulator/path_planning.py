@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.interpolate as interpolate
 from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
 
