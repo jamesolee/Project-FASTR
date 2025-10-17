@@ -1,0 +1,5 @@
+is_global = true
+build_property.RootNamespace = MAVLink
+build_property.ProjectDir = D:\Project-FASTR\2023-Quadcopter\pymavlink-master\generator\CS\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 

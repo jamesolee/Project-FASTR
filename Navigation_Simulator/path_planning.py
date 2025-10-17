@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.interpolate as interpolate
 from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
 
@@ -128,9 +129,9 @@ def natural_cubic_path(x, y, z):
 
 
 def TCB_path(x, y, z):
-    T = 0
-    B = 0
-    C = 0
+    T = 0.5
+    B = 1
+    C = 1
 
     p_x = []
     p_y = []
@@ -148,16 +149,18 @@ def TCB_path(x, y, z):
     z = [2 * z[0] - z[1]] + z + [2 * z[len(z) - 1] - z[len(z) - 2]]
 
     i = 1
-    while i < len(x) - 3:
-        dx.append(0.5*((1 - T) * (1 + C) * (1 + B)) * (x[i - 1] - x[i]) + 0.5*((1 - T) * (1 - C) * (1 - B))*(x[i + 1] - x[i]))
-        dy.append(0.5*((1 - T) * (1 + C) * (1 + B)) * (y[i - 1] - y[i]) + 0.5*((1 - T) * (1 - C) * (1 - B))*(y[i + 1] - y[i]))
-        dz.append(0.5*((1 - T) * (1 + C) * (1 + B)) * (z[i - 1] - z[i]) + 0.5*((1 - T) * (1 - C) * (1 - B))*(z[i + 1] - z[i]))
+    while i < len(x) - 1:
+        dx.append(2 * (((1 - T) * (1 + C) * (1 + B)) * (x[i] - x[i - 1]) + ((1 - T) * (1 - C) * (1 - B))*(x[i + 1] - x[i])))
+        dy.append(2 * (((1 - T) * (1 + C) * (1 + B)) * (y[i] - y[i - 1]) + ((1 - T) * (1 - C) * (1 - B))*(y[i + 1] - y[i])))
+        dz.append(2 * (((1 - T) * (1 + C) * (1 + B)) * (z[i] - z[i - 1]) + ((1 - T) * (1 - C) * (1 - B))*(z[i + 1] - z[i])))
         i += 1
 
     i = 0
     t = []
+
     
-    while i < len(x) - 1:
+
+    while i < len(x) - 3:
         t.append(i)
         i += 0.01
 
@@ -181,7 +184,6 @@ def TCB_path(x, y, z):
         dh3.append(3 * s**2 - 4 * s + 1)
         dh4.append(3 * s**2 - 2 * s)
 
-    
     dt = 0
     while dt < len(t) - 1:
         i = int(dt/100)
@@ -192,6 +194,7 @@ def TCB_path(x, y, z):
         v_y.append(float(dh1[dt]) * float(y[i]) + float(dh2[dt]) * float(y[i + 1]) + float(dh3[dt]) * dy[i] + float(dh4[dt]) * float(dy[i + 1]))
         v_z.append(float(dh1[dt]) * float(z[i]) + float(dh2[dt]) * float(z[i + 1]) + float(dh3[dt]) * dz[i] + float(dh4[dt]) * float(dz[i + 1]))
         dt += 1
+
 
     return p_x, p_y, p_z, v_x, v_y, v_z
 
