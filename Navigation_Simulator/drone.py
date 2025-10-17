@@ -193,7 +193,7 @@ class Drone:
     mujoco.mj_forward(self.model, self.data)
     self.n_gates = n_gates
     self.gate_centres = []
-    self.control_points = [[self.data.qpos[0],self.data.qpos[1],self.data.qpos[2]]]
+    self.control_points = [[0,0,1]]
     self.gate_att = [[0.0,0.0,math.pi]]
     self.gate_d = 0.5
 
@@ -209,21 +209,15 @@ class Drone:
       pos1 = pos - self.gate_d * np.array([np.sin(yaw), np.cos(yaw), 0])
       pos2 = pos + self.gate_d * np.array([np.sin(yaw), np.cos(yaw), 0])
 
-      self.control_points.append(pos1)
-      self.gate_att.append(euler_gate)
+      # self.control_points.append(pos1)
+      # self.gate_att.append(euler_gate)
 
       self.gate_centres.append(pos)
       self.control_points.append(pos)
       self.gate_att.append(euler_gate)
 
-      self.control_points.append(pos2)
-      self.gate_att.append(euler_gate)
-
-
-
-      # For spline calculation
-    self.control_points.append([0,0,0])
-    self.gate_att.append([0.0,0.0,math.pi])
+      # self.control_points.append(pos2)
+      # self.gate_att.append(euler_gate)
 
     points_x = []
     points_y = []
@@ -268,9 +262,9 @@ class Drone:
 
     print(len(points_x))
     # Compute path
-    self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = spline_path(points_x,points_y,points_z)
+    # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = spline_path(points_x,points_y,points_z)
     # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = catmull_rom_path(points_x,points_y,points_z)
-    # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = natural_cubic_path(points_x,points_y,points_z)
+    self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = natural_cubic_path(points_x,points_y,points_z)
     # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = TCB_path(points_x,points_y,points_z)
     # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = hermite_path(points_x,points_y,points_z, dx, dy, dz)
 
@@ -278,8 +272,8 @@ class Drone:
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    for i in range(self.n_gates):
-      ax.scatter(self.gate_centres[i][0], self.gate_centres[i][1], self.gate_centres[i][2],c='red',s=20)
+    for i in range(len(self.control_points)):
+      ax.scatter(self.control_points[i][0], self.control_points[i][1], self.control_points[i][2],c='red',s=20)
     ax.plot(self.spline_x, self.spline_y, self.spline_z, 'r.', markersize=0.5, label='Closed spline')
     ax.legend()
     ax.set_xlabel('X (m)')
