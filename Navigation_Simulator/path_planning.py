@@ -128,49 +128,127 @@ def natural_cubic_path(x, y, z):
     return x_smooth, y_smooth, z_smooth, v_x, v_y, v_z
 
 
-def TCB_path(x, y, z, samples=100):
-    T = 0.01
-    C = -0.3
-    B = 0.4
-    x = [2*x[0]-x[1]] + list(x) + [2*x[-1]-x[-2]]
-    y = [2*y[0]-y[1]] + list(y) + [2*y[-1]-y[-2]]
-    z = [2*z[0]-z[1]] + list(z) + [2*z[-1]-z[-2]]
+# def TCB_path(x, y, z, samples=100):
+#     T = 0.01
+#     C = -0.3
+#     B = 0.4
+#     x = [2*x[0]-x[1]] + list(x) + [2*x[-1]-x[-2]]
+#     y = [2*y[0]-y[1]] + list(y) + [2*y[-1]-y[-2]]
+#     z = [2*z[0]-z[1]] + list(z) + [2*z[-1]-z[-2]]
 
-    p_x, p_y, p_z, v_x, v_y, v_z = [], [], [], [], [], []
+#     p_x, p_y, p_z, v_x, v_y, v_z = [], [], [], [], [], []
 
-    # compute tangents
+#     # compute tangents
+#     dx, dy, dz = [], [], []
+#     for i in range(1, len(x)-1):
+#         dx.append(2 * ((1 - T) * ((1 + C) * (1 + B) * (x[i] - x[i-1]) / 2 + (1 - C) * (1 - B) * (x[i+1] - x[i]) / 2)))
+#         dy.append(2 * ((1 - T) * ((1 + C) * (1 + B) * (y[i] - y[i-1]) / 2 + (1 - C) * (1 - B) * (y[i+1] - y[i]) / 2)))
+#         dz.append(2 * ((1 - T) * ((1 + C) * (1 + B) * (z[i] - z[i-1]) / 2 + (1 - C) * (1 - B) * (z[i+1] - z[i]) / 2)))
+
+#     # interpolate segments
+#     for i in range(len(x)-3):
+#         for s in np.linspace(0, 1, samples):
+#             h1 = 2*s**3 - 3*s**2 + 1
+#             h2 = -2*s**3 + 3*s**2
+#             h3 = s**3 - 2*s**2 + s
+#             h4 = s**3 - s**2
+
+#             dh1 = 6*s**2 - 6*s
+#             dh2 = -6*s**2 + 6*s
+#             dh3 = 3*s**2 - 4*s + 1
+#             dh4 = 3*s**2 - 2*s
+
+#             px = h1*x[i+1] + h2*x[i+2] + h3*dx[i] + h4*dx[i+1]
+#             py = h1*y[i+1] + h2*y[i+2] + h3*dy[i] + h4*dy[i+1]
+#             pz = h1*z[i+1] + h2*z[i+2] + h3*dz[i] + h4*dz[i+1]
+
+#             vx = dh1*x[i+1] + dh2*x[i+2] + dh3*dx[i] + dh4*dx[i+1]
+#             vy = dh1*y[i+1] + dh2*y[i+2] + dh3*dy[i] + dh4*dy[i+1]
+#             vz = dh1*z[i+1] + dh2*z[i+2] + dh3*dz[i] + dh4*dz[i+1]
+
+#             p_x.append(px); p_y.append(py); p_z.append(pz)
+#             v_x.append(vx); v_y.append(vy); v_z.append(vz)
+
+#     return p_x, p_y, p_z, v_x, v_y, v_z
+
+def TCB_Adjustment(x, y, z, vx, vy, vz):
+    i = 0
+    dx = [vx[0]]
+    dy = [vy[0]]
+    dz = [vz[0]]
+    
+    T = 0
+    C = 0
+    B = 0
+
+    while i < len(vx):
+        vx[i] = 7 * vx[i]
+        vy[i] = 7 * vy[i]
+        vz[i] = 7 * vz[i]
+        i += 1
+
+    i = 1
     dx, dy, dz = [], [], []
     for i in range(1, len(x)-1):
         dx.append(2 * ((1 - T) * ((1 + C) * (1 + B) * (x[i] - x[i-1]) / 2 + (1 - C) * (1 - B) * (x[i+1] - x[i]) / 2)))
         dy.append(2 * ((1 - T) * ((1 + C) * (1 + B) * (y[i] - y[i-1]) / 2 + (1 - C) * (1 - B) * (y[i+1] - y[i]) / 2)))
         dz.append(2 * ((1 - T) * ((1 + C) * (1 + B) * (z[i] - z[i-1]) / 2 + (1 - C) * (1 - B) * (z[i+1] - z[i]) / 2)))
 
-    # interpolate segments
-    for i in range(len(x)-3):
-        for s in np.linspace(0, 1, samples):
-            h1 = 2*s**3 - 3*s**2 + 1
-            h2 = -2*s**3 + 3*s**2
-            h3 = s**3 - 2*s**2 + s
-            h4 = s**3 - s**2
+    # blend tangents
+    alpha = 0.5
+    i = 1
+    while(i < len(x)-1):
+        dx.append((1 - alpha) * )
+    
 
-            dh1 = 6*s**2 - 6*s
-            dh2 = -6*s**2 + 6*s
-            dh3 = 3*s**2 - 4*s + 1
-            dh4 = 3*s**2 - 2*s
 
-            px = h1*x[i+1] + h2*x[i+2] + h3*dx[i] + h4*dx[i+1]
-            py = h1*y[i+1] + h2*y[i+2] + h3*dy[i] + h4*dy[i+1]
-            pz = h1*z[i+1] + h2*z[i+2] + h3*dz[i] + h4*dz[i+1]
+    p_x = []
+    p_y = []
+    p_z = []
+    v_x = []
+    v_y = []
+    v_z = []
 
-            vx = dh1*x[i+1] + dh2*x[i+2] + dh3*dx[i] + dh4*dx[i+1]
-            vy = dh1*y[i+1] + dh2*y[i+2] + dh3*dy[i] + dh4*dy[i+1]
-            vz = dh1*z[i+1] + dh2*z[i+2] + dh3*dz[i] + dh4*dz[i+1]
+    i = 0
+    t = []
+    
+    while i < len(x) - 1:
+        t.append(i)
+        i += 0.01
 
-            p_x.append(px); p_y.append(py); p_z.append(pz)
-            v_x.append(vx); v_y.append(vy); v_z.append(vz)
+    h1 = []
+    h2 = []
+    h3 = []
+    h4 = []
+    dh1 = []
+    dh2 = []
+    dh3 = []
+    dh4 = []
 
-    return p_x, p_y, p_z, v_x, v_y, v_z
+    for i in t:
+        s = i % 1
+        h1.append(2 * s**3 - 3 * s**2 + 1)
+        h2.append(-2 * s**3 + 3 * s**2)
+        h3.append(s**3 -2 * s**2 + s)
+        h4.append(s**3 - s**2)
+        dh1.append(6 * s**2 - 6 * s)
+        dh2.append(-6 * s**2 + 6 * s)
+        dh3.append(3 * s**2 - 4 * s + 1)
+        dh4.append(3 * s**2 - 2 * s)
 
+    
+    dt = 0
+    while dt < len(t) - 1:
+        i = int(dt/100)
+        p_x.append(float(h1[dt]) * float(x[i]) + float(h2[dt]) * float(x[i + 1]) + float(h3[dt]) * dx[i] + float(h4[dt]) * float(dx[i + 1]))
+        p_y.append(float(h1[dt]) * float(y[i]) + float(h2[dt]) * float(y[i + 1]) + float(h3[dt]) * dy[i] + float(h4[dt]) * float(dy[i + 1]))
+        p_z.append(float(h1[dt]) * float(z[i]) + float(h2[dt]) * float(z[i + 1]) + float(h3[dt]) * dz[i] + float(h4[dt]) * float(dz[i + 1]))
+        v_x.append(float(dh1[dt]) * float(x[i]) + float(dh2[dt]) * float(x[i + 1]) + float(dh3[dt]) * dx[i] + float(dh4[dt]) * float(dx[i + 1]))
+        v_y.append(float(dh1[dt]) * float(y[i]) + float(dh2[dt]) * float(y[i + 1]) + float(dh3[dt]) * dy[i] + float(dh4[dt]) * float(dy[i + 1]))
+        v_z.append(float(dh1[dt]) * float(z[i]) + float(dh2[dt]) * float(z[i + 1]) + float(dh3[dt]) * dz[i] + float(dh4[dt]) * float(dz[i + 1]))
+        dt += 1
+
+    i = 0
 
 
 def spline_path(x,y,z):
