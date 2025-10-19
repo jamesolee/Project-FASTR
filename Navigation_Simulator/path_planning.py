@@ -92,9 +92,9 @@ def natural_cubic_path(x, y, z):
     z = np.array(z)
 
     t= np.arange(len(x))
-    p_x = CubicSpline(t, x, bc_type='natural')
-    p_y = CubicSpline(t, y, bc_type='natural')
-    p_z = CubicSpline(t, z, bc_type='natural')
+    p_x = CubicSpline(t, x, bc_type=((2, 0.0), (1, 0.0)))
+    p_y = CubicSpline(t, y, bc_type=((2, 0.0), (1, 0.0)))
+    p_z = CubicSpline(t, z, bc_type=((2, 0.0), (1, 0.0)))   
 
     t_smooth = np.linspace(t[0], t[-1], 600)
     x_smooth = list(p_x(t_smooth))
@@ -107,12 +107,11 @@ def natural_cubic_path(x, y, z):
 
     return x_smooth, y_smooth, z_smooth, v_x, v_y, v_z
 
-import numpy as np
 
 def TCB_path(x, y, z, samples=100):
-    T = 0.01
-    C = -0.3
-    B = 0.4
+    T = 0.1
+    C = 0
+    B = -0.1
 
     # Extend endpoints
     x = [2*x[0]-x[1]] + list(x) + [2*x[-1]-x[-2]]
@@ -128,6 +127,10 @@ def TCB_path(x, y, z, samples=100):
         dx.append(2*(1-T)*((1+C)*(1+B)*(x[i]-x[i-1])/2 + (1-C)*(1-B)*(x[i+1]-x[i])/2))
         dy.append(2*(1-T)*((1+C)*(1+B)*(y[i]-y[i-1])/2 + (1-C)*(1-B)*(y[i+1]-y[i])/2))
         dz.append(2*(1-T)*((1+C)*(1+B)*(z[i]-z[i-1])/2 + (1-C)*(1-B)*(z[i+1]-z[i])/2))
+
+    # --- Clamp endpoints to remove end curl ---
+    dx[0] = 0; dy[0] = 0; dz[0] = 0      # flat start
+    dx[-1] = 0; dy[-1] = 0; dz[-1] = 0    # flat end
 
     # interpolate segments
     for i in range(len(x)-3):
@@ -225,8 +228,8 @@ def main():
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.plot(x_new, y_new, z_new, label='Closed spline')
-    ax.plot(x_new[0:len(x_new)//2], y_new[0:len(x_new)//2], z_new[0:len(x_new)//2],'g.', label='Closed spline')
+    ax.plot(x_new, y_new, label='spline')
+    ax.plot(x_new[0:len(x_new)//2], y_new[0:len(x_new)//2],'g.', label='Closed spline')
     ax.scatter(x, y, z, c='red', label='Control points')
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
