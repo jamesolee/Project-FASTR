@@ -266,7 +266,7 @@ class Drone:
     # Compute path
     # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = spline_path(points_x,points_y,points_z)
     # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = catmull_rom_path(points_x,points_y,points_z)
-    # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = natural_cubic_path(points_x,points_y,points_z)
+    self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = natural_cubic_path(points_x,points_y,points_z)
     # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = TCB_path(points_x,points_y,points_z)
     # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = hermite_path(points_x,points_y,points_z, dx, dy, dz)
       # self.spline_x = points_x; self.spline_y = points_y; self.spline_z = points_z 
@@ -445,10 +445,10 @@ class Drone:
     dir_vec = avg_wp - np.array([self.x, self.y, self.z])
     dir_vec = dir_vec / (np.linalg.norm(dir_vec) + 1e-6)
     r = pos_error/wp_error
-    K_ff = 1.2 * np.min([math.sqrt(r), 1])
+    K_ff = 1.4 * np.min([r, 1])
     V_ff = K_ff * dir_vec
-    # self.ctrl_pos_hold(next_waypoint[0], next_waypoint[1], next_waypoint[2], ff_vx= V_ff[0], ff_vy=V_ff[1], ff_vz=V_ff[2])
-    self.ctrl_pos_hold(next_waypoint[0], next_waypoint[1], next_waypoint[2], ff_vx=0, ff_vy=0, ff_vz=0)
+    self.ctrl_pos_hold(next_waypoint[0], next_waypoint[1], next_waypoint[2], ff_vx= V_ff[0], ff_vy=V_ff[1], ff_vz=V_ff[2])
+    # self.ctrl_pos_hold(next_waypoint[0], next_waypoint[1], next_waypoint[2], ff_vx=0, ff_vy=0, ff_vz=0)
 
     return
 
@@ -532,7 +532,7 @@ class Drone:
         case CtrlType.POS_HOLD:
           self.ctrl_pos_hold(2, 2, 1)
         case CtrlType.FOLLOW_SPLINE:
-          self.follow_spline(spline_step=1, wp_error=0.5) # spline_step controls how far to look ahead for next waypoint
+          self.follow_spline(spline_step=10, wp_error=0.5) # spline_step controls how far to look ahead for next waypoint
 
       # print(self.data.ctrl)
       # print(self.data.qpos)
@@ -594,6 +594,7 @@ class Drone:
     
     print(self.end_time - self.t_vec[0])
     vel = []
+    i = 0
     while (i < len(self.vx_hist)):
       vel.append(math.sqrt(self.vx_hist[i] ** 2 + self.vy_hist[i] ** 2 + self.vz_hist[i] ** 2))
       i += 1
@@ -683,7 +684,7 @@ class Drone:
     ax.plot(self.x_hist, self.y_hist, label='Drone trajectory')
     for i in range(self.n_gates):
       ax.scatter(self.gate_centres[i][0], self.gate_centres[i][1],c='red',s=20)
-    ax.plot(self.spline_x, self.spline_y, 'r.', markersize=0.5, label='Linear Interpolation')
+    ax.plot(self.spline_x, self.spline_y, 'r.', markersize=0.5, label='Natural Cubic')
     ax.legend()
     ax.set_xlabel('X (m)')
     ax.set_ylabel('Y (m)')
@@ -695,7 +696,7 @@ def run_test():
   dir_path = os.getcwd()
   xml_path = dir_path + '/mujoco_menagerie-main/skydio_x2_racecourse/scene.xml'
   drone = Drone(xml_path, n_gates=6)
-  drone.run_sim(30, 300, ctrl_type=CtrlType.FOLLOW_SPLINE, enable_camera=False)
+  drone.run_sim(25, 300, ctrl_type=CtrlType.FOLLOW_SPLINE, enable_camera=False)
 
 if __name__ == '__main__':
   run_test()
