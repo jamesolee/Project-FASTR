@@ -53,24 +53,20 @@ def set_axes_equal(ax):
       ax: a matplotlib axis, e.g., as output from plt.gca().
     """
 
-    x_limits = ax.get_xlim3d()
-    y_limits = ax.get_ylim3d()
-    z_limits = ax.get_zlim3d()
+    x_limits = ax.get_xlim()
+    y_limits = ax.get_ylim()
 
     x_range = abs(x_limits[1] - x_limits[0])
     x_middle = np.mean(x_limits)
     y_range = abs(y_limits[1] - y_limits[0])
     y_middle = np.mean(y_limits)
-    z_range = abs(z_limits[1] - z_limits[0])
-    z_middle = np.mean(z_limits)
 
     # The plot bounding box is a sphere in the sense of the infinity
     # norm, hence I call half the max range the plot radius.
-    plot_radius = 0.5*max([x_range, y_range, z_range])
+    plot_radius = 0.5*max([x_range, y_range])
 
-    ax.set_xlim3d([x_middle - plot_radius, x_middle + plot_radius])
-    ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])
-    ax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])
+    ax.set_xlim([x_middle - plot_radius, x_middle + plot_radius])
+    ax.set_ylim([y_middle - plot_radius, y_middle + plot_radius])
 
 def display_video(window_name, frames, fps=60):
     cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
@@ -136,13 +132,13 @@ class Drone:
 
     # Rate controller PIDs
     self.pid_thrust = PID(5, 0.5, 0.01, setpoint=0)
-    self.pid_roll_rate = PID(1, 0.5, 0.01, setpoint=0, output_limits= (-1,1))
-    self.pid_pitch_rate = PID(1, 0.5, 0.01, setpoint=0, output_limits= (-1,1))
-    self.pid_yaw_rate = PID(5, 0.5, 0.01, setpoint=0, output_limits= (-1,1))
+    self.pid_roll_rate = PID(2, 0, 0.0, setpoint=0, output_limits= (-1,1))
+    self.pid_pitch_rate = PID(2, 0, 0.0, setpoint=0, output_limits= (-1,1))
+    self.pid_yaw_rate = PID(5, 0.5, 0, setpoint=0, output_limits= (-1,1))
 
     # Attitude controller PIDs
-    self.pid_alt = PID(1, 0, 0, setpoint=0, output_limits= (-10,10))
-    self.Kp = 2
+    self.pid_alt = PID(1, 0.1, 0, setpoint=0, output_limits= (-10,10))
+    self.Kp = 5
     self.Kp_yaw = 1
     # Unused - using SQRT controller instead
     # self.pid_roll = PID(3, 2, 5, setpoint=0, output_limits= (-1,1))
@@ -150,10 +146,10 @@ class Drone:
     # self.pid_yaw = PID(5, 1, 5, setpoint=0, output_limits= (-1,1))
 
     # Velocity XY controller PIDs
-    self.pid_vx = PID(10, 0.2, 3, setpoint=0, output_limits= (-10,10))
-    self.pid_vy = PID(10, 0.2, 3, setpoint=0, output_limits= (-10,10))
+    self.pid_vx = PID(2.5, 0, 0, setpoint=0, output_limits= (-10,10))
+    self.pid_vy = PID(2.5, 0, 0, setpoint=0, output_limits= (-10,10))
 
-    self.Kp_pos = 1
+    self.Kp_pos = 0.8
 
     # Arrays for data
     self.t_vec = []
@@ -168,6 +164,8 @@ class Drone:
     self.wz_hist = []
     self.energy = [] # Track simulation time-step energy loss
 
+    self.max_acc = 0
+
     self.pitch_hist = []
     self.roll_hist = []
     self.yaw_hist = []
@@ -177,6 +175,11 @@ class Drone:
     self.pitch_error_hist = []
     self.roll_error_hist = []
     self.yaw_error_hist = []
+
+    self.waypoint_y = []
+
+    self.race_finish = False
+    self.end_time = 0
 
     self.target_roll_rate_hist = []
     self.target_pitch_rate_hist = []
@@ -193,8 +196,8 @@ class Drone:
     mujoco.mj_forward(self.model, self.data)
     self.n_gates = n_gates
     self.gate_centres = []
-    self.control_points = [[self.data.qpos[0],self.data.qpos[1],self.data.qpos[2]]]
-    self.gate_att = [[0.0,0.0,math.pi]]
+    self.control_points = []
+    self.gate_att = []
     self.gate_d = 0.5
 
     for i in range(self.n_gates):
@@ -209,21 +212,15 @@ class Drone:
       pos1 = pos - self.gate_d * np.array([np.sin(yaw), np.cos(yaw), 0])
       pos2 = pos + self.gate_d * np.array([np.sin(yaw), np.cos(yaw), 0])
 
-      self.control_points.append(pos1)
-      self.gate_att.append(euler_gate)
+      # self.control_points.append(pos1)
+      # self.gate_att.append(euler_gate)
 
       self.gate_centres.append(pos)
       self.control_points.append(pos)
       self.gate_att.append(euler_gate)
 
-      self.control_points.append(pos2)
-      self.gate_att.append(euler_gate)
-
-
-
-      # For spline calculation
-    self.control_points.append([0,0,0])
-    self.gate_att.append([0.0,0.0,math.pi])
+      # self.control_points.append(pos2)
+      # self.gate_att.append(euler_gate)
 
     points_x = []
     points_y = []
@@ -266,20 +263,20 @@ class Drone:
       dz.append(0)
       i += 1
 
-    print(len(points_x))
     # Compute path
-    self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = spline_path(points_x,points_y,points_z)
+    # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = spline_path(points_x,points_y,points_z)
     # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = catmull_rom_path(points_x,points_y,points_z)
-    # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = natural_cubic_path(points_x,points_y,points_z)
+    self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = natural_cubic_path(points_x,points_y,points_z)
     # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = TCB_path(points_x,points_y,points_z)
     # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = hermite_path(points_x,points_y,points_z, dx, dy, dz)
+      # self.spline_x = points_x; self.spline_y = points_y; self.spline_z = points_z 
 
     self.spline_idx = 0
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    for i in range(self.n_gates):
-      ax.scatter(self.gate_centres[i][0], self.gate_centres[i][1], self.gate_centres[i][2],c='red',s=20)
+    for i in range(len(self.control_points)):
+      ax.scatter(self.control_points[i][0], self.control_points[i][1], self.control_points[i][2],c='red',s=20)
     ax.plot(self.spline_x, self.spline_y, self.spline_z, 'r.', markersize=0.5, label='Closed spline')
     ax.legend()
     ax.set_xlabel('X (m)')
@@ -322,8 +319,8 @@ class Drone:
     self.pid_pitch_rate.setpoint = target_pitch_rate
     self.pid_yaw_rate.setpoint = target_yaw_rate
 
-    self.target_roll_rate_hist.append(target_roll_rate)
-    self.target_pitch_rate_hist.append(target_pitch_rate)
+    self.target_roll_rate_hist.append(self.roll_rate)
+    self.target_pitch_rate_hist.append(self.pitch_rate)
     self.target_yaw_rate_hist.append(target_yaw_rate)
 
     self.data.ctrl = Drone._rates_to_motor(self.pid_thrust(self.vz) + 3.249,
@@ -374,7 +371,7 @@ class Drone:
     self.ctrl_att_rate(target_vz, target_roll_rate_world, target_pitch_rate_world, target_yaw_rate_world)
   
   def ctrl_vel(self, target_vx, target_vy, target_vz):
-    g = 9.8
+    g = 9.81
     vx_error = target_vx - self.vx
     vy_error = target_vy - self.vy
 
@@ -419,15 +416,38 @@ class Drone:
     next_waypoint = [self.spline_x[idx], self.spline_y[idx], self.spline_z[idx]]
     pos_error = np.sqrt( (self.x-next_waypoint[0])**2 + (self.y-next_waypoint[1])**2 + (self.z-next_waypoint[2])**2)
     if pos_error < wp_error:
-      self.spline_idx += spline_step
-      # print(f'Idx = {self.spline_idx}')
+      if (self.spline_idx >= len(self.spline_x) - 2):
+        pass
+      else:
+        self.spline_idx += spline_step
 
-    # Set position hold to waypoint with feedforward velocity scaled by position error
+    if (self.spline_idx >= len(self.spline_x) - 2) and self.race_finish == False:
+      self.end_time = self.data.time
+      self.race_finish = True
+
+    # Set position hold to waypoint with feedforward velocity scaled by po sition error
+
     idx = self.spline_idx%len(self.spline_x)
     next_waypoint = [self.spline_x[idx], self.spline_y[idx], self.spline_z[idx]]
     pos_error = np.sqrt( (self.x-next_waypoint[0])**2 + (self.y-next_waypoint[1])**2 + (self.z-next_waypoint[2])**2)
-    K_ff = 5 * np.min([wp_error/pos_error, 1])
-    self.ctrl_pos_hold(next_waypoint[0], next_waypoint[1], next_waypoint[2], ff_vx=K_ff * self.spline_vx[idx], ff_vy=K_ff * self.spline_vy[idx], ff_vz=K_ff * self.spline_vz[idx])
+    look_ahead = 5  # number of points to average
+    points = []
+
+    for i in range(look_ahead):
+        idx = (self.spline_idx + i) % len(self.spline_x)
+        points.append([
+            self.spline_x[idx],
+            self.spline_y[idx],
+            self.spline_z[idx]
+        ])
+
+    avg_wp = np.mean(points, axis=0)  # smoothed target
+    dir_vec = avg_wp - np.array([self.x, self.y, self.z])
+    dir_vec = dir_vec / (np.linalg.norm(dir_vec) + 1e-6)
+    r = pos_error/wp_error
+    K_ff = 1.4 * np.min([r, 1])
+    V_ff = K_ff * dir_vec
+    self.ctrl_pos_hold(next_waypoint[0], next_waypoint[1], next_waypoint[2], ff_vx= V_ff[0], ff_vy=V_ff[1], ff_vz=V_ff[2])
     # self.ctrl_pos_hold(next_waypoint[0], next_waypoint[1], next_waypoint[2], ff_vx=0, ff_vy=0, ff_vz=0)
 
     return
@@ -503,16 +523,16 @@ class Drone:
           # Control signal that is sinusoidal over time
           self.ctrl_sinusoid(duration)
         case CtrlType.ATT_RATE:
-          self.ctrl_att_rate(0.1, 5/180*np.pi, 0/180*np.pi, 0/180*np.pi)
+          self.ctrl_att_rate(1, 5/180*np.pi, 0/180*np.pi, 0/180*np.pi)
         case CtrlType.ATT_HOLD:
           # self.ctrl_att_hold(1, 0/180*np.pi, 5/180*np.pi, (180-np.mod(i/6,360.0))/180*np.pi)
           self.ctrl_att_hold(5/180*np.pi, 0/180*np.pi, 180/180*np.pi)
         case CtrlType.VEL_HOLD:
-          self.ctrl_vel(1,1,1)
+          self.ctrl_vel(5,5,5)
         case CtrlType.POS_HOLD:
-          self.ctrl_pos_hold(2, 2, 2)
+          self.ctrl_pos_hold(2, 2, 1)
         case CtrlType.FOLLOW_SPLINE:
-          self.follow_spline(spline_step=5, wp_error=0.5) # spline_step controls how far to look ahead for next waypoint
+          self.follow_spline(spline_step=10, wp_error=0.5) # spline_step controls how far to look ahead for next waypoint
 
       # print(self.data.ctrl)
       # print(self.data.qpos)
@@ -539,6 +559,9 @@ class Drone:
       self.wx_hist.append(self.roll_rate)
       self.wy_hist.append(self.pitch_rate)
       self.wz_hist.append(self.yaw_rate)
+
+      acc = math.sqrt(self.data.qacc[0] ** 2 + self.data.qacc[1] ** 2 + self.data.qacc[2] ** 2)
+      self.max_acc = max(acc, self.max_acc)
 
       # Render and add the frame.
       pixels = renderer.render()
@@ -569,6 +592,15 @@ class Drone:
     media.write_video("sim.mp4", frames, fps=framerate)
     # display_video('Simulation',frames,fps=framerate)
     
+    print(self.end_time - self.t_vec[0])
+    vel = []
+    i = 0
+    while (i < len(self.vx_hist)):
+      vel.append(math.sqrt(self.vx_hist[i] ** 2 + self.vy_hist[i] ** 2 + self.vz_hist[i] ** 2))
+      i += 1
+    ave_vel = sum(vel) / len(vel)
+    print("Max acceleration: ", self.max_acc)
+    print("Average Vel: ", ave_vel)
     self._plot_all()
   
   def _plot_all(self):
@@ -576,17 +608,17 @@ class Drone:
     # Plot X and Y on the first y-axis
     ax1.plot(self.t_vec, self.x_hist, label='X', color='blue')
     ax1.plot(self.t_vec, self.y_hist, label='Y', color='green')
-    # ax1.plot(self.t_vec, self.target_x_hist, label='Target X', color='blue', linestyle='dashed')
-    # ax1.plot(self.t_vec, self.target_y_hist, label='Target Y', color='green', linestyle='dashed')
+    # # ax1.plot(self.t_vec, self.target_x_hist, label='Target X', color='blue', linestyle='dashed')
+    # # ax1.plot(self.t_vec, self.target_y_hist, label='Target Y', color='green', linestyle='dashed')
     ax1.set_xlabel('Time')
     ax1.set_ylabel('X and Y')
     ax1.legend(loc='upper left')
-    # Create a second y-axis for Z
-    ax2 = ax1.twinx()
-    ax2.plot(self.t_vec, self.z_hist, label='Z', color='red')
-    ax2.plot(self.t_vec, self.z_hist, label='Z', color='red', linestyle='dashed')
-    ax2.set_ylabel('Z')
-    ax2.legend(loc='upper right')
+    # # Create a second y-axis for Z
+    # ax2 = ax1.twinx()
+    # ax2.plot(self.t_vec, self.z_hist, label='Z', color='red')
+    # ax2.plot(self.t_vec, self.z_hist, label='Z', color='red', linestyle='dashed')
+    # ax2.set_ylabel('Z')
+    # ax2.legend(loc='upper right')
     plt.savefig('graph_position.png')
     plt.show()
 
@@ -606,7 +638,6 @@ class Drone:
     # plt.plot(self.t_vec, 180/np.pi * np.array(self.target_pitch_rate_hist), label='Pitch rate target')
     # plt.plot(self.t_vec, 180/np.pi * np.array(self.target_yaw_rate_hist), label='Yaw rate target')
     # ax = plt.gca()
-    # ax.set_ylim(-90,90)
     # plt.legend()
     # plt.show()
 
@@ -615,51 +646,48 @@ class Drone:
     # plt.title('Energy')
     # plt.show()
 
-    # plt.figure()
-    # plt.plot(self.t_vec, 180/np.pi * np.array(self.roll_hist), label='Roll')
-    # plt.plot(self.t_vec, 180/np.pi * np.array(self.pitch_hist), label='Pitch')
-    # plt.plot(self.t_vec, 180/np.pi * np.array(self.yaw_hist), label='Yaw')
+    plt.figure()
+    plt.plot(self.t_vec, 180/np.pi * np.array(self.roll_hist), label='Roll')
+    plt.plot(self.t_vec, 180/np.pi * np.array(self.pitch_hist), label='Pitch')
+    # # plt.plot(self.t_vec, 180/np.pi * np.array(self.yaw_hist), label='Yaw')
     # plt.plot(self.t_vec, 180/np.pi * np.array(self.target_roll_hist), label='Roll target')
     # plt.plot(self.t_vec, 180/np.pi * np.array(self.target_pitch_hist), label='Pitch target')
-    # plt.plot(self.t_vec, 180/np.pi * np.array(self.target_yaw_hist), label='Yaw target')
-    # ax = plt.gca()
-    # ax.set_ylim(-180,180)
-    # plt.legend()
-    # plt.show()
+    # # plt.plot(self.t_vec, 180/np.pi * np.array(self.target_yaw_hist), label='Yaw target')
+    ax = plt.gca()
+
+    plt.legend()
+    plt.show()
 
     # plt.figure()
-    # plt.plot(self.t_vec, 180/np.pi * np.array(self.roll_error_hist), label='Roll error')
-    # plt.plot(self.t_vec, 180/np.pi * np.array(self.pitch_error_hist), label='Pitch error')
-    # plt.plot(self.t_vec, 180/np.pi * np.array(self.yaw_error_hist), label='Yaw error')
+    # plt.plot(self.t_vec, self.waypoint_y, label='Roll error')
     # ax = plt.gca()
     # plt.legend()
     # plt.show()
 
-    fig, ax1 = plt.subplots()
-    ax1.plot(self.t_vec, self.vx_error_hist, label='vx error', color='blue')
-    ax1.plot(self.t_vec, self.vy_error_hist, label='vy error', color='green')
-    ax1.set_xlabel('Time')
-    ax1.set_ylabel('vx and vy errors')
-    ax1.legend(loc='upper left')
-    ax2 = ax1.twinx()
-    ax2.plot(self.t_vec, self.target_roll_rate_hist, label='roll', color='red')
+    fig, ax2 = plt.subplots()
+    # ax1.plot(self.t_vec, self.vx_error_hist, label='vx error', color='blue')
+    # ax1.plot(self.t_vec, self.vy_error_hist, label='vy error', color='green')
+    # ax1.set_xlabel('Time')
+    # ax1.set_ylabel('vx and vy errors')
+    # ax1.legend(loc='upper left')
+    # ax2 = ax1.twinx()
+    ax2.plot(self.t_vec, self.target_roll_rate_hist , label='roll', color='red')
     ax2.plot(self.t_vec, self.target_pitch_rate_hist, label='pitch', color='orange')
     ax2.set_ylabel('Target roll and pitch')
     ax2.legend(loc='upper right')
-    ax2.set_ylim(-180,180)
+    ax2.set_ylim(-0.5,0.5)
     plt.savefig('graph_v_errors.png')
     plt.show()
 
     fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.plot(self.x_hist, self.y_hist, self.z_hist, label='Drone trajectory')
+    ax = fig.add_subplot()
+    ax.plot(self.x_hist, self.y_hist, label='Drone trajectory')
     for i in range(self.n_gates):
-      ax.scatter(self.gate_centres[i][0], self.gate_centres[i][1], self.gate_centres[i][2],c='red',s=20)
-    ax.plot(self.spline_x, self.spline_y, self.spline_z, 'r.', markersize=0.5, label='Closed spline')
+      ax.scatter(self.gate_centres[i][0], self.gate_centres[i][1],c='red',s=20)
+    ax.plot(self.spline_x, self.spline_y, 'r.', markersize=0.5, label='Natural Cubic')
     ax.legend()
     ax.set_xlabel('X (m)')
     ax.set_ylabel('Y (m)')
-    ax.set_zlabel('Z (m)')
     set_axes_equal(ax)
     plt.savefig('graph_trajectory.png')
     plt.show()
@@ -668,7 +696,7 @@ def run_test():
   dir_path = os.getcwd()
   xml_path = dir_path + '/mujoco_menagerie-main/skydio_x2_racecourse/scene.xml'
   drone = Drone(xml_path, n_gates=6)
-  drone.run_sim(20, 300, ctrl_type=CtrlType.FOLLOW_SPLINE, enable_camera=False)
+  drone.run_sim(25, 300, ctrl_type=CtrlType.FOLLOW_SPLINE, enable_camera=False)
 
 if __name__ == '__main__':
   run_test()

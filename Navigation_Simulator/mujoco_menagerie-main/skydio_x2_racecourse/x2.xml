@@ -43,13 +43,13 @@
       <geom class="collision" size=".023 .017 .01" pos="-.137 .008 .065" quat="1 0 0 1"/>
       <geom name="rotor1" class="rotor" pos="-.14 -.18 .05" mass=".25"/>
       <geom name="rotor2" class="rotor" pos="-.14 .18 .05" mass=".25"/>
-      <geom name="rotor3" class="rotor" pos=".14 .18 .08" mass=".25"/>
-      <geom name="rotor4" class="rotor" pos=".14 -.18 .08" mass=".25"/>
+      <geom name="rotor3" class="rotor" pos=".14 .18 .05" mass=".25"/>
+      <geom name="rotor4" class="rotor" pos=".14 -.18 .05" mass=".25"/>
       <geom size=".16 .04 .02" pos="0 0 0.02" type="ellipsoid" mass=".325" class="visual" material="invisible"/>
       <site name="thrust1" pos="-.14 -.18 .05"/>
       <site name="thrust2" pos="-.14 .18 .05"/>
-      <site name="thrust3" pos=".14 .18 .08"/>
-      <site name="thrust4" pos=".14 -.18 .08"/>
+      <site name="thrust3" pos=".14 .18 .05"/>
+      <site name="thrust4" pos=".14 -.18 .05"/>
     </body>
   </worldbody>
 
