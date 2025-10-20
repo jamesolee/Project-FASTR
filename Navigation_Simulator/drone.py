@@ -266,25 +266,23 @@ class Drone:
     # Compute path
     # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = spline_path(points_x,points_y,points_z)
     # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = catmull_rom_path(points_x,points_y,points_z)
-    self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = natural_cubic_path(points_x,points_y,points_z)
-    # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = TCB_path(points_x,points_y,points_z)
+    # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = natural_cubic_path(points_x,points_y,points_z)
+    self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = TCB_path(points_x,points_y,points_z)
     # self.spline_x, self.spline_y, self.spline_z, self.spline_vx, self.spline_vy, self.spline_vz = hermite_path(points_x,points_y,points_z, dx, dy, dz)
       # self.spline_x = points_x; self.spline_y = points_y; self.spline_z = points_z 
 
     self.spline_idx = 0
 
     fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    for i in range(len(self.control_points)):
-      ax.scatter(self.control_points[i][0], self.control_points[i][1], self.control_points[i][2],c='red',s=20)
-    ax.plot(self.spline_x, self.spline_y, self.spline_z, 'r.', markersize=0.5, label='Closed spline')
-    ax.legend()
-    ax.set_xlabel('X (m)')
-    ax.set_ylabel('Y (m)')
-    ax.set_zlabel('Z (m)')
+    ax = fig.add_subplot()
+    for i in range(self.n_gates):
+      ax.scatter(self.gate_centres[i][0], self.gate_centres[i][1],c='red',s=20)
+    ax.plot(self.spline_x, self.spline_y, 'k-', markersize=0.5)
+    ax.axis('off')
     set_axes_equal(ax)
     plt.savefig('graph_trajectory.png')
     plt.show()
+
     
 
   def get_position(self):
@@ -445,7 +443,7 @@ class Drone:
     dir_vec = avg_wp - np.array([self.x, self.y, self.z])
     dir_vec = dir_vec / (np.linalg.norm(dir_vec) + 1e-6)
     r = pos_error/wp_error
-    K_ff = 1.4 * np.min([r, 1])
+    K_ff = 1.2 * np.min([r, 1])
     V_ff = K_ff * dir_vec
     self.ctrl_pos_hold(next_waypoint[0], next_waypoint[1], next_waypoint[2], ff_vx= V_ff[0], ff_vy=V_ff[1], ff_vz=V_ff[2])
     # self.ctrl_pos_hold(next_waypoint[0], next_waypoint[1], next_waypoint[2], ff_vx=0, ff_vy=0, ff_vz=0)
